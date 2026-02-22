@@ -1,6 +1,11 @@
 inputs:
 
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   cfg = config.programs.illogical-impulse;
@@ -86,10 +91,10 @@ in
       hyprpicker
       imagemagick
       ffmpeg
-      songrec  # Music recognition
-      pulseaudio  # Provides pactl and parec for audio recording
-      gnome-settings-daemon  # Provides gsettings
-      libnotify  # Provides notify-send
+      songrec # Music recognition
+      pulseaudio # Provides pactl and parec for audio recording
+      gnome-settings-daemon # Provides gsettings
+      libnotify # Provides notify-send
       easyeffects
       grim
 
@@ -110,27 +115,27 @@ in
       # Themes and icons
       adw-gtk3
       customPkgs.illogical-impulse-oneui4-icons
-      papirus-icon-theme  # Primary icon theme
-      adwaita-icon-theme  # GNOME fallback icons
-      hicolor-icon-theme  # Base icon theme (required by most themes)
-      gnome-icon-theme  # Additional GNOME icon coverage
-      kdePackages.breeze-icons  # KDE Breeze icons (required by Papirus inheritance)
+      papirus-icon-theme # Primary icon theme
+      adwaita-icon-theme # GNOME fallback icons
+      hicolor-icon-theme # Base icon theme (required by most themes)
+      gnome-icon-theme # Additional GNOME icon coverage
+      kdePackages.breeze-icons # KDE Breeze icons (required by Papirus inheritance)
 
       # Cloudflare-warp
       cloudflare-warp
-      
+
       # Python with required packages for wallpaper analysis
       pythonEnv
-      eza  # Modern ls replacement
+      eza # Modern ls replacement
 
       # Minimal Qt/KDE packages (only what's needed for functionality)
-      gnome-keyring  # Keyring support
-      kdePackages.bluedevil  # Bluetooth management (for kcm_bluetooth)
-      kdePackages.plasma-nm  # Network management (for kcm_networkmanagement)
+      gnome-keyring # Keyring support
+      kdePackages.bluedevil # Bluetooth management (for kcm_bluetooth)
+      kdePackages.plasma-nm # Network management (for kcm_networkmanagement)
       kdePackages.plasma-workspace # Provides plasma-apply-colorscheme
       kdePackages.kde-cli-tools # Provides various KDE CLI utilities
-      kdePackages.polkit-kde-agent-1  # Polkit authentication agent
-      kdePackages.kdialog  # Dialog prompts
+      kdePackages.polkit-kde-agent-1 # Polkit authentication agent
+      kdePackages.kdialog # Dialog prompts
       kdePackages.kirigami
 
       # Additional Qt support
@@ -138,12 +143,6 @@ in
       libsForQt5.qtsvg
       # for quickshell key store
       libsecret
-    ] ++ lib.optionals cfg.dotfiles.fish.enable [
-      fish
-    ] ++ lib.optionals cfg.dotfiles.kitty.enable [
-      kitty
-    ] ++ lib.optionals cfg.dotfiles.starship.enable [
-      starship
     ];
   };
 }
