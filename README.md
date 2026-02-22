@@ -1,5 +1,7 @@
 # Illogical Impulse Flake
 
+**Version without hyprland config**
+
 Home-manager module for [end-4's Illogical Impulse Hyprland dotfiles](https://github.com/end-4/dots-hyprland) with QuickShell integration.
 
 **Based on**: [xBLACKICEx/end-4-dots-hyprland-nixos](https://github.com/xBLACKICEx/end-4-dots-hyprland-nixos)
@@ -16,13 +18,6 @@ programs.hyprland.enable = true;
 services.geoclue2.enable = true;  # For QtPositioning
 services.networkmanager.enable = true;  # For network management
 services.upower.enable = true; # For battery status
-
-# System fonts (optional but recommended)
-fonts.packages = with pkgs; [
-  rubik
-  nerd-fonts.ubuntu
-  nerd-fonts.jetbrains-mono
-];
 ```
 
 ## Installation
@@ -66,13 +61,6 @@ fonts.packages = with pkgs; [
   programs.illogical-impulse = {
     enable = true;
 
-    # Customize shell tools (all enabled by default)
-    dotfiles = {
-      fish.enable = true;     # Fish shell with custom config
-      kitty.enable = true;    # Kitty terminal emulator
-      starship.enable = true; # Starship prompt
-    };
-    
     # Hyprland Plugins (Declarative installation & loading)
     hyprland.plugins = [
       pkgs.hyprlandPlugins.hyprbars
@@ -104,7 +92,7 @@ Override the `dotfiles` input to use your own fork:
     };
 
     illogical-flake = {
-      url = "github:soymou/illogical-flake";
+      url = "github:strtab/illogical-flake";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.dotfiles.follows = "dotfiles";  # Override to use your dotfiles
     };

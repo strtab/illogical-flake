@@ -1,9 +1,19 @@
 inputs:
 
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
-  inherit (lib) mkEnableOption mkOption types mkIf mkDefault;
+  inherit (lib)
+    mkOption
+    types
+    mkIf
+    mkDefault
+    ;
   cfg = config.programs.illogical-impulse;
 
   # Use dotfiles from flake input
@@ -14,16 +24,10 @@ let
   oneUIIconsPath = "${customPkgs.illogical-impulse-oneui4-icons}/share/icons";
 in
 {
-  options.programs.illogical-impulse.dotfiles = {
-    fish.enable = mkEnableOption "Use the Illogical Impulse fish config" // { default = true; };
-    kitty.enable = mkEnableOption "Install kitty and use the Illogical Impulse kitty config" // { default = true; };
-    starship.enable = mkEnableOption "Install starship and use the Illogical Impulse prompt" // { default = true; };
-  };
-
   options.programs.illogical-impulse.hyprland = {
     plugins = mkOption {
       type = types.listOf types.package;
-      default = [];
+      default = [ ];
       description = "List of Hyprland plugins to install and load";
     };
   };
@@ -40,8 +44,10 @@ in
             return 0
         }
       '';
-      ".local/state/quickshell/.venv/bin/python".source = "${config.programs.illogical-impulse.internal.pythonEnv}/bin/python";
-      ".local/state/quickshell/.venv/bin/python3".source = "${config.programs.illogical-impulse.internal.pythonEnv}/bin/python3";
+      ".local/state/quickshell/.venv/bin/python".source =
+        "${config.programs.illogical-impulse.internal.pythonEnv}/bin/python";
+      ".local/state/quickshell/.venv/bin/python3".source =
+        "${config.programs.illogical-impulse.internal.pythonEnv}/bin/python3";
       ".local/state/quickshell/.venv/pyvenv.cfg".text = ''
         home = ${config.programs.illogical-impulse.internal.pythonEnv}/bin
         include-system-site-packages = false
@@ -51,17 +57,6 @@ in
 
     # Install the plugins to the user environment so they are available
     home.packages = cfg.hyprland.plugins;
-
-    # Shell programs
-    programs.fish = {
-      enable = cfg.dotfiles.fish.enable;
-      interactiveShellInit = ''
-        if test -f ${config.xdg.configHome}/fish/config-custom.fish
-          source ${config.xdg.configHome}/fish/config-custom.fish
-        end
-      '';
-    };
-    programs.starship.enable = cfg.dotfiles.starship.enable;
 
     # Symlink standard icon themes (Adwaita)
     home.file.".local/share/icons/Adwaita".source = "${pkgs.adwaita-icon-theme}/share/icons/Adwaita";
@@ -87,109 +82,38 @@ in
       "chrome-flags.conf".source = "${dotfilesSource}/dots/.config/chrome-flags.conf";
       "code-flags.conf".source = "${dotfilesSource}/dots/.config/code-flags.conf";
       "darklyrc".source = "${dotfilesSource}/dots/.config/darklyrc";
-      "dolphinrc".source = "${dotfilesSource}/dots/.config/dolphinrc";
-      "foot".source = "${dotfilesSource}/dots/.config/foot";
       "fuzzel".source = "${dotfilesSource}/dots/.config/fuzzel";
-      
-      # Hyprland Config
-      # Use text/readFile to put the file in the HM generation directory
-      # This ensures relative sources (like hyprland/env.conf) resolve to OUR patched files
-      "hypr/hyprland.conf".text = (builtins.readFile "${dotfilesSource}/dots/.config/hypr/hyprland.conf") + ''
-        
-        # Load declarative plugins from the flake
-        source = plugins.conf
-      '';
-      
-      # Generate plugins.conf with paths to installed plugins
-      "hypr/plugins.conf".text = lib.concatMapStrings (plugin: ''
-        plugin = ${plugin}/lib/lib${plugin.pname}.so
-      '') cfg.hyprland.plugins;
-      
-      # Hyprland Environment - Patched to fix XDG_DATA_DIRS and define qsConfig EARLY
-      "hypr/hyprland/env.conf".text = ''
-        # --- Injected Environment by Illogical Impulse Flake ---
-        env = PATH,${config.home.homeDirectory}/.nix-profile/bin:/etc/profiles/per-user/${config.home.username}/bin:$PATH
-        env = XDG_DATA_DIRS,${config.home.homeDirectory}/.nix-profile/share:${config.home.homeDirectory}/.local/share:/etc/profiles/per-user/${config.home.username}/share:/run/current-system/sw/share:${config.home.homeDirectory}/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/local/share:/usr/share:$XDG_DATA_DIRS
-        env = QT_PLUGIN_PATH,${config.home.homeDirectory}/.nix-profile/lib/qt-6/plugins:${config.home.homeDirectory}/.nix-profile/lib/plugins
-        env = QML2_IMPORT_PATH,${config.home.homeDirectory}/.nix-profile/lib/qt-6/qml
-        env = QT_WAYLAND_DISABLE_WINDOWDECORATION,1
-        env = QT_QPA_PLATFORMTHEME,gtk3
-        
-        # Define qsConfig for exec-once commands
-        $qsConfig = ${config.home.homeDirectory}/.config/quickshell/ii
-        env = qsConfig,${config.home.homeDirectory}/.config/quickshell/ii
-
-        # --- Original Environment Content ---
-        env = ELECTRON_OZONE_PLATFORM_HINT,auto
-        env = QT_QPA_PLATFORM, wayland
-        env = XDG_MENU_PREFIX, plasma-
-        env = ILLOGICAL_IMPULSE_VIRTUAL_ENV, ~/.local/state/quickshell/.venv
-        env = TERMINAL,kitty -1
-      '';
-
-      # Symlink other hyprland files individually
-      "hypr/hyprland/colors.conf".source = "${dotfilesSource}/dots/.config/hypr/hyprland/colors.conf";
-      "hypr/hyprland/execs.conf".source = "${dotfilesSource}/dots/.config/hypr/hyprland/execs.conf";
-      # Patch general.conf to remove obsolete hyprexpo options (enable_gesture, gesture_positive)
-      # These were removed from the hyprexpo plugin API and cause "Invalid value false for finger count" error
-      "hypr/hyprland/general.conf".text = builtins.replaceStrings
-        [ "enable_gesture = false" "gesture_positive = false" ]
-        [ "# enable_gesture = false  # Removed: obsolete hyprexpo option" "# gesture_positive = false  # Removed: obsolete hyprexpo option" ]
-        (builtins.readFile "${dotfilesSource}/dots/.config/hypr/hyprland/general.conf");
-      "hypr/hyprland/keybinds.conf".source = "${dotfilesSource}/dots/.config/hypr/hyprland/keybinds.conf";
-      "hypr/hyprland/rules.conf".source = "${dotfilesSource}/dots/.config/hypr/hyprland/rules.conf";
-      "hypr/hyprland/scripts".source = "${dotfilesSource}/dots/.config/hypr/hyprland/scripts";
-
-      # Hyprland Custom Env - Reverted to direct source
-      "hypr/custom/env.conf".source = "${dotfilesSource}/dots/.config/hypr/custom/env.conf";
-
-      # Symlink custom siblings
-      "hypr/custom/execs.conf".source = "${dotfilesSource}/dots/.config/hypr/custom/execs.conf";
-      "hypr/custom/general.conf".source = "${dotfilesSource}/dots/.config/hypr/custom/general.conf";
-      "hypr/custom/keybinds.conf".source = "${dotfilesSource}/dots/.config/hypr/custom/keybinds.conf";
-      "hypr/custom/rules.conf".source = "${dotfilesSource}/dots/.config/hypr/custom/rules.conf";
-      "hypr/custom/scripts".source = "${dotfilesSource}/dots/.config/hypr/custom/scripts";
-      "hypr/hyprlock".source = "${dotfilesSource}/dots/.config/hypr/hyprlock";
-      "hypr/hypridle.conf".source = "${dotfilesSource}/dots/.config/hypr/hypridle.conf";
-      "hypr/hyprlock.conf".source = "${dotfilesSource}/dots/.config/hypr/hyprlock.conf";
-      "hypr/monitors.conf".source = "${dotfilesSource}/dots/.config/hypr/monitors.conf";
-      "hypr/workspaces.conf".source = "${dotfilesSource}/dots/.config/hypr/workspaces.conf";
-
-      # kdeglobals handled in activation script
-      # "kdeglobals".source = "${dotfilesSource}/dots/.config/kdeglobals";
-      
       "kde-material-you-colors".source = "${dotfilesSource}/dots/.config/kde-material-you-colors";
-      "kitty".source = "${dotfilesSource}/dots/.config/kitty";
-      "konsolerc".source = "${dotfilesSource}/dots/.config/konsolerc";
       "Kvantum".source = "${dotfilesSource}/dots/.config/Kvantum";
       "matugen".source = "${dotfilesSource}/dots/.config/matugen";
       "mpv".source = "${dotfilesSource}/dots/.config/mpv";
-      
-      # Patch QuickShell scripts to fix shebangs (e.g., #!/bin/bash -> #!/nix/store/.../bash)
-      "quickshell".source = pkgs.runCommand "quickshell-patched" { 
-        buildInputs = [ 
-          pkgs.bash 
-          config.programs.illogical-impulse.internal.pythonEnv 
-        ]; 
-      } ''
-        cp -r ${dotfilesSource}/dots/.config/quickshell $out
-        chmod -R +w $out
-        
-        # Replace complex shebangs that patchShebangs can't handle with standard python
-        # The complex shebang tried to source a venv, but we provide pythonEnv directly via Nix
-        find $out -name "*.py" -print0 | xargs -0 sed -i 's|^#!.*ILLOGICAL_IMPULSE_VIRTUAL_ENV.*|#!/usr/bin/env python3|'
-        
-        # Suppress permission errors when writing to /dev/pts in applycolor.sh
-        sed -i 's|/dev/pts/\*|/dev/pts/* 2>/dev/null|' $out/ii/scripts/colors/applycolor.sh
 
-        patchShebangs $out
-      '';
-
-      "starship.toml".source = "${dotfilesSource}/dots/.config/starship.toml";
       "thorium-flags.conf".source = "${dotfilesSource}/dots/.config/thorium-flags.conf";
       "wlogout".source = "${dotfilesSource}/dots/.config/wlogout";
       "xdg-desktop-portal".source = "${dotfilesSource}/dots/.config/xdg-desktop-portal";
-      "zshrc.d".source = "${dotfilesSource}/dots/.config/zshrc.d";
+
+      # Patch QuickShell scripts to fix shebangs (e.g., #!/bin/bash -> #!/nix/store/.../bash)
+      "quickshell".source =
+        pkgs.runCommand "quickshell-patched"
+          {
+            buildInputs = [
+              pkgs.bash
+              config.programs.illogical-impulse.internal.pythonEnv
+            ];
+          }
+          ''
+            cp -r ${dotfilesSource}/dots/.config/quickshell $out
+            chmod -R +w $out
+
+            # Replace complex shebangs that patchShebangs can't handle with standard python
+            # The complex shebang tried to source a venv, but we provide pythonEnv directly via Nix
+            find $out -name "*.py" -print0 | xargs -0 sed -i 's|^#!.*ILLOGICAL_IMPULSE_VIRTUAL_ENV.*|#!/usr/bin/env python3|'
+
+            # Suppress permission errors when writing to /dev/pts in applycolor.sh
+            sed -i 's|/dev/pts/\*|/dev/pts/* 2>/dev/null|' $out/ii/scripts/colors/applycolor.sh
+
+            patchShebangs $out
+          '';
 
       # Fontconfig wrapper to ensure system fonts are loaded
       "fontconfig/fonts.conf".text = ''
@@ -204,26 +128,19 @@ in
           </match>
         </fontconfig>
       '';
-      
-      # Fish config (custom integration)
-      "fish/config-custom.fish" = mkIf cfg.dotfiles.fish.enable {
-        source = "${dotfilesSource}/dots/.config/fish/config.fish";
-      };
-      "fish/auto-Hypr.fish" = mkIf cfg.dotfiles.fish.enable {
-        source = "${dotfilesSource}/dots/.config/fish/auto-Hypr.fish";
-      };
     };
 
     # Dotfiles management via Home Manager (XDG Data)
     xdg.dataFile = {
-      # Note: Icons are installed via packages (illogical-impulse-oneui4-icons) 
+      # Note: Icons are installed via packages (illogical-impulse-oneui4-icons)
       # and the custom icon is handled here if needed, but it's usually in the package too?
       # Re-adding the single SVG manually just in case
-      "icons/hicolor/scalable/apps/illogical-impulse.svg".source = "${dotfilesSource}/dots/.local/share/icons/illogical-impulse.svg";
+      "icons/hicolor/scalable/apps/illogical-impulse.svg".source =
+        "${dotfilesSource}/dots/.local/share/icons/illogical-impulse.svg";
     };
 
     # Use activation script ONLY for stateful integration
-    home.activation.copyIllogicalImpulseConfigs = config.lib.dag.entryAfter ["writeBoundary"] ''
+    home.activation.copyIllogicalImpulseConfigs = config.lib.dag.entryAfter [ "writeBoundary" ] ''
       # Path to the config directory in the dotfiles source
       configPath="${dotfilesSource}/dots/.config"
       targetPath="$HOME/.config"
@@ -238,7 +155,7 @@ in
           $DRY_RUN_CMD chmod u+w "$targetPath/illogical-impulse/config.json"
         fi
       fi
-      
+
       # Handle kdeglobals (Mutable copy)
       # If it's a symlink (likely from previous HM generation), remove it first
       if [ -L "$targetPath/kdeglobals" ]; then
@@ -294,3 +211,4 @@ in
     '';
   };
 }
+
