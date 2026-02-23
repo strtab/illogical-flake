@@ -204,6 +204,10 @@ in
           $DRY_RUN_CMD sed -i 's/^icon_theme=OneUI-light$/icon_theme=Gruvbox-Plus-Light/' "$qt_conf"
         fi
       done
+
+      # Change icon theme in kde-material-you-colors config
+      $DRY_RUN_CMD sed -i 's/iconsdark = breeze-plus/iconslight=Gruvbox-Plus-Dark/' "$targetPath/kde-material-you-colors/config.conf"
+      $DRY_RUN_CMD sed -i 's/iconslight = breeze-plus/iconslight=Gruvbox-Plus-Light/' "$targetPath/kde-material-you-colors/config.conf"
     '';
   };
 }
