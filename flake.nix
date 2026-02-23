@@ -6,7 +6,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     quickshell = {
-      url = "github:quickshell-mirror/quickshell/2cf57f43d5f2a5b139d1f1702c83e126e17f27f8";
+      url = "git+https://git.outfoxxed.me/outfoxxed/quickshell?ref=refs/heads/master&rev=191085a8821b35680bba16ce5411fc9dbe912237";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -18,7 +18,6 @@
     # Default dotfiles - can be overridden by users
     dotfiles = {
       url = "github:end-4/dots-hyprland/8bf279e571ff14a653d956eb23f63e54ae88dc8b?submodules=1";
-      # url = "github:end-4/dots-hyprland?submodules=1";
       flake = false;
     };
   };
