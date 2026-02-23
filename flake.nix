@@ -17,20 +17,37 @@
 
     # Default dotfiles - can be overridden by users
     dotfiles = {
-      url = "git+https://github.com/end-4/dots-hyprland?submodules=1";
+      url = "github:end-4/dots-hyprland/8bf279e571ff14a653d956eb23f63e54ae88dc8b?submodules=1";
+      # url = "github:end-4/dots-hyprland?submodules=1";
       flake = false;
     };
   };
 
-  outputs = inputs@{ self, nixpkgs, quickshell, nur, dotfiles, ... }:
+  outputs =
+    inputs@{
+      self,
+      nixpkgs,
+      quickshell,
+      nur,
+      dotfiles,
+      ...
+    }:
     let
       flakeInputs = { inherit quickshell nur dotfiles; };
-    in {
+    in
+    {
       # Home-manager module for user configuration
-      homeManagerModules.default = { config, lib, pkgs, ... }: (import ./home-module.nix) {
-        inherit config lib pkgs;
-        inputs = flakeInputs;
-      };
+      homeManagerModules.default =
+        {
+          config,
+          lib,
+          pkgs,
+          ...
+        }:
+        (import ./home-module.nix) {
+          inherit config lib pkgs;
+          inputs = flakeInputs;
+        };
       homeManagerModules.illogical-flake = self.homeManagerModules.default;
     };
 }
