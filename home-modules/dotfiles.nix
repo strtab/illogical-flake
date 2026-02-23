@@ -21,7 +21,7 @@ let
 
   # Custom packages
   customPkgs = import ../pkgs { inherit pkgs; };
-  oneUIIconsPath = "${customPkgs.illogical-impulse-oneui4-icons}/share/icons";
+  gruvboxIconsPath = "${customPkgs.gruvbox-plus-icons}/share/icons";
 in
 {
   options.programs.illogical-impulse.hyprland = {
@@ -65,15 +65,15 @@ in
     gtk = {
       enable = mkDefault true;
       iconTheme = {
-        name = mkDefault "OneUI-dark";
-        package = mkDefault customPkgs.illogical-impulse-oneui4-icons;
+        name = mkDefault "Gruvbox-Plus-Dark";
+        package = mkDefault customPkgs.gruvbox-plus-icons;
       };
     };
 
     # Set icon theme via dconf for GNOME/GTK apps
     dconf.settings = {
       "org/gnome/desktop/interface" = {
-        icon-theme = mkDefault "OneUI-dark";
+        icon-theme = mkDefault "Gruvbox-Plus-Dark";
       };
     };
 
@@ -132,7 +132,7 @@ in
 
     # Dotfiles management via Home Manager (XDG Data)
     xdg.dataFile = {
-      # Note: Icons are installed via packages (illogical-impulse-oneui4-icons)
+      # Note: Icons are installed via packages (gruvbox-plus-icons)
       # and the custom icon is handled here if needed, but it's usually in the package too?
       # Re-adding the single SVG manually just in case
       "icons/hicolor/scalable/apps/illogical-impulse.svg".source =
@@ -199,16 +199,14 @@ in
           $DRY_RUN_CMD chmod u+w "$konsoleTarget/$filename"
       done
 
-      # Fix Qt icon theme configuration to use OneUI-dark/OneUI-light with Papirus fallback
+      # Fix Qt icon theme configuration to use Gruvbox-Plus-Dark/Gruvbox-Plus-Light with Papirus fallback
       # This is still needed because qt6ct might be generating its config
       for qt_conf in "$targetPath/qt5ct/qt5ct.conf" "$targetPath/qt6ct/qt6ct.conf"; do
         if [ -f "$qt_conf" ]; then
-          # Replace OneUI with OneUI-dark, OneUI-light stays as-is
-          $DRY_RUN_CMD sed -i 's/^icon_theme=OneUI$/icon_theme=OneUI-dark/' "$qt_conf"
-          $DRY_RUN_CMD sed -i 's/^icon_theme=OneUI-light$/icon_theme=OneUI-light/' "$qt_conf"
+          $DRY_RUN_CMD sed -i 's/^icon_theme=OneUI$/icon_theme=Gruvbox-Plus-Dark/' "$qt_conf"
+          $DRY_RUN_CMD sed -i 's/^icon_theme=OneUI-light$/icon_theme=Gruvbox-Plus-Light/' "$qt_conf"
         fi
       done
     '';
   };
 }
-
