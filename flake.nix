@@ -6,7 +6,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     quickshell = {
-      url = "git+https://git.outfoxxed.me/outfoxxed/quickshell";
+      url = "github:quickshell-mirror/quickshell/2cf57f43d5f2a5b139d1f1702c83e126e17f27f8";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
