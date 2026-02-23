@@ -50,12 +50,7 @@ in
         # Comprehensive XDG_DATA_DIRS for icon and desktop file discovery
         export XDG_DATA_DIRS="${
           lib.makeSearchPath "share" [
-            pkgs.adwaita-icon-theme
-            pkgs.hicolor-icon-theme
-            pkgs.papirus-icon-theme
             customPkgs.gruvbox-plus-icons
-            pkgs.gnome-icon-theme
-            pkgs.kdePackages.breeze-icons
             pkgs.lxqt.pavucontrol-qt
             pkgs.pavucontrol
           ]

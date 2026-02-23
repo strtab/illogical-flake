@@ -115,11 +115,6 @@ in
       # Themes and icons
       adw-gtk3
       customPkgs.gruvbox-plus-icons
-      papirus-icon-theme # Primary icon theme
-      adwaita-icon-theme # GNOME fallback icons
-      hicolor-icon-theme # Base icon theme (required by most themes)
-      gnome-icon-theme # Additional GNOME icon coverage
-      kdePackages.breeze-icons # KDE Breeze icons (required by Papirus inheritance)
 
       # Cloudflare-warp
       cloudflare-warp

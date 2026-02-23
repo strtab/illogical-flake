@@ -58,9 +58,6 @@ in
     # Install the plugins to the user environment so they are available
     home.packages = cfg.hyprland.plugins;
 
-    # Symlink standard icon themes (Adwaita)
-    home.file.".local/share/icons/Adwaita".source = "${pkgs.adwaita-icon-theme}/share/icons/Adwaita";
-
     # Configure icon theme for GTK and Qt applications
     gtk = {
       enable = mkDefault true;
