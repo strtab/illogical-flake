@@ -13,6 +13,8 @@
         "url": "https://github.com/end-4/dots-hyprland"
       },
       "original": {
+        "ref": "refs/heads/main",
+        "rev": "1b4c439c3e8286809747becfc59461b484345bfa",
         "submodules": true,
         "type": "git",
         "url": "https://github.com/end-4/dots-hyprland"
@@ -92,6 +94,8 @@
         "url": "https://git.outfoxxed.me/outfoxxed/quickshell"
       },
       "original": {
+        "ref": "refs/heads/master",
+        "rev": "191085a8821b35680bba16ce5411fc9dbe912237",
         "type": "git",
         "url": "https://git.outfoxxed.me/outfoxxed/quickshell"
       }

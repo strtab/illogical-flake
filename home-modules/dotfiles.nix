@@ -79,7 +79,7 @@ in
       "chrome-flags.conf".source = "${dotfilesSource}/dots/.config/chrome-flags.conf";
       "code-flags.conf".source = "${dotfilesSource}/dots/.config/code-flags.conf";
       "darklyrc".source = "${dotfilesSource}/dots/.config/darklyrc";
-      "fuzzel".source = "${dotfilesSource}/dots/.config/fuzzel";
+      "fuzzel.ini".source = "${dotfilesSource}/dots/.config/fuzzel/fuzzel.ini";
       "kde-material-you-colors".source = "${dotfilesSource}/dots/.config/kde-material-you-colors";
       "Kvantum".source = "${dotfilesSource}/dots/.config/Kvantum";
       "matugen".source = "${dotfilesSource}/dots/.config/matugen";
@@ -90,41 +90,44 @@ in
       "xdg-desktop-portal".source = "${dotfilesSource}/dots/.config/xdg-desktop-portal";
 
       # Patch QuickShell scripts to fix shebangs (e.g., #!/bin/bash -> #!/nix/store/.../bash)
-      "quickshell".source =
-        pkgs.runCommand "quickshell-patched"
-          {
-            buildInputs = [
-              pkgs.bash
-              config.programs.illogical-impulse.internal.pythonEnv
-            ];
-          }
-          ''
-            cp -r ${dotfilesSource}/dots/.config/quickshell $out
-            chmod -R +w $out
+      "quickshell" = {
+        executable = true;
+        source =
+          pkgs.runCommand "quickshell-patched"
+            {
+              buildInputs = [
+                pkgs.bash
+                config.programs.illogical-impulse.internal.pythonEnv
+              ];
+            }
+            ''
+              cp -r ${dotfilesSource}/dots/.config/quickshell $out
+              chmod -R +w $out
 
-            # Replace complex shebangs that patchShebangs can't handle with standard python
-            # The complex shebang tried to source a venv, but we provide pythonEnv directly via Nix
-            find $out -name "*.py" -print0 | xargs -0 sed -i 's|^#!.*ILLOGICAL_IMPULSE_VIRTUAL_ENV.*|#!/usr/bin/env python3|'
+              # Replace complex shebangs that patchShebangs can't handle with standard python
+              # The complex shebang tried to source a venv, but we provide pythonEnv directly via Nix
+              find $out -name "*.py" -print0 | xargs -0 sed -i 's|^#!.*ILLOGICAL_IMPULSE_VIRTUAL_ENV.*|#!/usr/bin/env python3|'
 
-            # Suppress permission errors when writing to /dev/pts in applycolor.sh
-            sed -i 's|/dev/pts/\*|/dev/pts/* 2>/dev/null|' $out/ii/scripts/colors/applycolor.sh
+              # Suppress permission errors when writing to /dev/pts in applycolor.sh
+              sed -i 's|/dev/pts/\*|/dev/pts/* 2>/dev/null|' $out/ii/scripts/colors/applycolor.sh
 
-            patchShebangs $out
-          '';
+              patchShebangs $out
+            '';
 
-      # Fontconfig wrapper to ensure system fonts are loaded
-      "fontconfig/fonts.conf".text = ''
-        <?xml version="1.0"?>
-        <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
-        <fontconfig>
-            <include ignore_missing="yes">/etc/fonts/fonts.conf</include>
-            <match target="font">
-                <edit name="rgba" mode="assign">
-                <const>none</const>
-            </edit>
-          </match>
-        </fontconfig>
-      '';
+        # Fontconfig wrapper to ensure system fonts are loaded
+        "fontconfig/fonts.conf".text = ''
+          <?xml version="1.0"?>
+          <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+          <fontconfig>
+              <include ignore_missing="yes">/etc/fonts/fonts.conf</include>
+              <match target="font">
+                  <edit name="rgba" mode="assign">
+                  <const>none</const>
+              </edit>
+            </match>
+          </fontconfig>
+        '';
+      };
     };
 
     # Dotfiles management via Home Manager (XDG Data)
@@ -204,6 +207,31 @@ in
           $DRY_RUN_CMD sed -i 's/^icon_theme=OneUI-light$/icon_theme=Gruvbox-Plus-Light/' "$qt_conf"
         fi
       done
+
+      # Handle fuzzel directory (Mutable directory with managed files)
+      fuzzelTargetDir="$HOME/.config/fuzzel"
+      fuzzelTarget="$HOME/.config/fuzzel/fuzzel_theme.ini"
+      fuzzelSource="${dotfilesSource}/dots/.config/fuzzel/fuzzel_theme.ini"
+
+      # If it is a symlink (from previous HM generation), remove it
+      if [ -L "$fuzzelTargetDir" ]; then
+          $DRY_RUN_CMD rm "$fuzzelTargetDir"
+      fi
+
+      # Ensure directory exists
+      if [ ! -d "$fuzzelTargetDir" ]; then
+          $DRY_RUN_CMD mkdir -p "$fuzzelTargetDir"
+      fi
+
+      if [ ! -f "$fuzzelTarget" ]; then
+         if [ -f "$fuzzelTarget" ]; then
+             $DRY_RUN_CMD cp "$fuzzelSource" "$fuzzelTarget"
+             $DRY_RUN_CMD chmod u+w "$fuzzelTarget"
+         fi
+      else
+         # Ensure it's writable even if it exists
+         $DRY_RUN_CMD chmod u+w "$fuzzelTarget" 
+      fi
     '';
   };
 }
