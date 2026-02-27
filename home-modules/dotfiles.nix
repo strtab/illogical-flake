@@ -113,21 +113,21 @@ in
 
               patchShebangs $out
             '';
-
-        # Fontconfig wrapper to ensure system fonts are loaded
-        "fontconfig/fonts.conf".text = ''
-          <?xml version="1.0"?>
-          <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
-          <fontconfig>
-              <include ignore_missing="yes">/etc/fonts/fonts.conf</include>
-              <match target="font">
-                  <edit name="rgba" mode="assign">
-                  <const>none</const>
-              </edit>
-            </match>
-          </fontconfig>
-        '';
       };
+
+      # Fontconfig wrapper to ensure system fonts are loaded
+      "fontconfig/fonts.conf".text = ''
+        <?xml version="1.0"?>
+        <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+        <fontconfig>
+            <include ignore_missing="yes">/etc/fonts/fonts.conf</include>
+            <match target="font">
+                <edit name="rgba" mode="assign">
+                <const>none</const>
+            </edit>
+          </match>
+        </fontconfig>
+      '';
     };
 
     # Dotfiles management via Home Manager (XDG Data)
