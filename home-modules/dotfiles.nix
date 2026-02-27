@@ -21,7 +21,28 @@ let
 
   # Custom packages
   customPkgs = import ../pkgs { inherit pkgs; };
-  gruvboxIconsPath = "${customPkgs.gruvbox-plus-icons}/share/icons";
+
+  quickshellPatched =
+    pkgs.runCommand "quickshell-patched"
+      {
+        buildInputs = [
+          pkgs.bash
+          config.programs.illogical-impulse.internal.pythonEnv
+        ];
+      }
+      ''
+        cp -r ${dotfilesSource}/dots/.config/quickshell $out
+        chmod -R +w $out
+
+        # Replace complex shebangs that patchShebangs can't handle with standard python
+        # The complex shebang tried to source a venv, but we provide pythonEnv directly via Nix
+        find $out -name "*.py" -print0 | xargs -0 sed -i 's|^#!.*ILLOGICAL_IMPULSE_VIRTUAL_ENV.*|#!/usr/bin/env python3|'
+
+        # Suppress permission errors when writing to /dev/pts in applycolor.sh
+        sed -i 's|/dev/pts/\*|/dev/pts/* 2>/dev/null|' $out/ii/scripts/colors/applycolor.sh
+
+        patchShebangs $out
+      '';
 in
 {
   options.programs.illogical-impulse.hyprland = {
@@ -78,42 +99,11 @@ in
     xdg.configFile = {
       "chrome-flags.conf".source = "${dotfilesSource}/dots/.config/chrome-flags.conf";
       "code-flags.conf".source = "${dotfilesSource}/dots/.config/code-flags.conf";
-      "darklyrc".source = "${dotfilesSource}/dots/.config/darklyrc";
-      "fuzzel.ini".source = "${dotfilesSource}/dots/.config/fuzzel/fuzzel.ini";
-      "kde-material-you-colors".source = "${dotfilesSource}/dots/.config/kde-material-you-colors";
       "Kvantum".source = "${dotfilesSource}/dots/.config/Kvantum";
-      "matugen".source = "${dotfilesSource}/dots/.config/matugen";
       "mpv".source = "${dotfilesSource}/dots/.config/mpv";
-
       "thorium-flags.conf".source = "${dotfilesSource}/dots/.config/thorium-flags.conf";
       "wlogout".source = "${dotfilesSource}/dots/.config/wlogout";
       "xdg-desktop-portal".source = "${dotfilesSource}/dots/.config/xdg-desktop-portal";
-
-      # Patch QuickShell scripts to fix shebangs (e.g., #!/bin/bash -> #!/nix/store/.../bash)
-      "quickshell" = {
-        executable = true;
-        source =
-          pkgs.runCommand "quickshell-patched"
-            {
-              buildInputs = [
-                pkgs.bash
-                config.programs.illogical-impulse.internal.pythonEnv
-              ];
-            }
-            ''
-              cp -r ${dotfilesSource}/dots/.config/quickshell $out
-              chmod -R +w $out
-
-              # Replace complex shebangs that patchShebangs can't handle with standard python
-              # The complex shebang tried to source a venv, but we provide pythonEnv directly via Nix
-              find $out -name "*.py" -print0 | xargs -0 sed -i 's|^#!.*ILLOGICAL_IMPULSE_VIRTUAL_ENV.*|#!/usr/bin/env python3|'
-
-              # Suppress permission errors when writing to /dev/pts in applycolor.sh
-              sed -i 's|/dev/pts/\*|/dev/pts/* 2>/dev/null|' $out/ii/scripts/colors/applycolor.sh
-
-              patchShebangs $out
-            '';
-      };
 
       # Fontconfig wrapper to ensure system fonts are loaded
       "fontconfig/fonts.conf".text = ''
@@ -145,6 +135,45 @@ in
       configPath="${dotfilesSource}/dots/.config"
       targetPath="$HOME/.config"
 
+      for item in \
+        "darklyrc" \
+        "matugen" \
+        "kde-material-you-colors"
+      do
+      if [ -L "$targetPath/$item" ]; then
+        $DRY_RUN_CMD rm -rf "$targetPath/$item"
+      fi
+      $DRY_RUN_CMD cp -rf "$configPath/$item" "$targetPath/$item"
+      $DRY_RUN_CMD chmod -R u+w "$targetPath/$item"
+      done
+
+      # quickshell separately (patched derivation)
+      if [ -L "$targetPath/quickshell" ] || [ -d "$targetPath/quickshell" ]; then
+        $DRY_RUN_CMD rm -rf "$targetPath/quickshell"
+      fi
+      $DRY_RUN_CMD cp -r "${quickshellPatched}" "$targetPath/quickshell"
+      $DRY_RUN_CMD chmod -R u+w "$targetPath/quickshell"
+
+      $DRY_RUN_CMD find $targetPath/quickshell -name "*.py" -exec chmod +x {} \;
+      $DRY_RUN_CMD find $targetPath/quickshell -name "*.sh" -exec chmod +x {} \;
+
+
+      if [ -L "$targetPath/fuzzel" ]; then
+        $DRY_RUN_CMD rm -rf "$targetPath/fuzzel"
+      fi
+
+      # Create fuzzel directory if it doesn't exist (Stateful config)
+      $DRY_RUN_CMD mkdir -p "$targetPath/fuzzel"
+
+      # Copy the default theme only if it doesn't already exist
+      if [ ! -f "$targetPath/fuzzel/fuzzel_theme.ini" ]; then
+        if [ -f "$configPath/fuzzel/fuzzel_theme.ini" ]; then
+          $DRY_RUN_CMD cp "$configPath/fuzzel/fuzzel_theme.ini" "$targetPath/fuzzel/fuzzel_theme.ini"
+          $DRY_RUN_CMD chmod u+w "$targetPath/fuzzel/fuzzel_theme.ini"
+        fi
+      fi
+
+
       # Create illogical-impulse directory structure if it doesn't exist (Stateful config)
       $DRY_RUN_CMD mkdir -p "$targetPath/illogical-impulse"
 
@@ -173,6 +202,7 @@ in
          $DRY_RUN_CMD chmod u+w "$targetPath/kdeglobals"
       fi
 
+
       # Handle konsole directory (Mutable directory with managed files)
       konsoleTarget="$HOME/.local/share/konsole"
       konsoleSource="${dotfilesSource}/dots/.local/share/konsole"
@@ -199,6 +229,7 @@ in
           $DRY_RUN_CMD chmod u+w "$konsoleTarget/$filename"
       done
 
+
       # Fix Qt icon theme configuration to use Gruvbox-Plus-Dark/Gruvbox-Plus-Light with Papirus fallback
       # This is still needed because qt6ct might be generating its config
       for qt_conf in "$targetPath/qt5ct/qt5ct.conf" "$targetPath/qt6ct/qt6ct.conf"; do
@@ -207,31 +238,6 @@ in
           $DRY_RUN_CMD sed -i 's/^icon_theme=OneUI-light$/icon_theme=Gruvbox-Plus-Light/' "$qt_conf"
         fi
       done
-
-      # Handle fuzzel directory (Mutable directory with managed files)
-      fuzzelTargetDir="$HOME/.config/fuzzel"
-      fuzzelTarget="$HOME/.config/fuzzel/fuzzel_theme.ini"
-      fuzzelSource="${dotfilesSource}/dots/.config/fuzzel/fuzzel_theme.ini"
-
-      # If it is a symlink (from previous HM generation), remove it
-      if [ -L "$fuzzelTargetDir" ]; then
-          $DRY_RUN_CMD rm "$fuzzelTargetDir"
-      fi
-
-      # Ensure directory exists
-      if [ ! -d "$fuzzelTargetDir" ]; then
-          $DRY_RUN_CMD mkdir -p "$fuzzelTargetDir"
-      fi
-
-      if [ ! -f "$fuzzelTarget" ]; then
-         if [ -f "$fuzzelTarget" ]; then
-             $DRY_RUN_CMD cp "$fuzzelSource" "$fuzzelTarget"
-             $DRY_RUN_CMD chmod u+w "$fuzzelTarget"
-         fi
-      else
-         # Ensure it's writable even if it exists
-         $DRY_RUN_CMD chmod u+w "$fuzzelTarget" 
-      fi
     '';
   };
 }
