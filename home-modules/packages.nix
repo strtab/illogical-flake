@@ -132,6 +132,7 @@ in
       kdePackages.polkit-kde-agent-1 # Polkit authentication agent
       kdePackages.kdialog # Dialog prompts
       kdePackages.kirigami
+      kdePackages.kwin
 
       # Additional Qt support
       libsForQt5.qtgraphicaleffects
