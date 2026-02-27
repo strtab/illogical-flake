@@ -38,9 +38,6 @@ let
         # The complex shebang tried to source a venv, but we provide pythonEnv directly via Nix
         find $out -name "*.py" -print0 | xargs -0 sed -i 's|^#!.*ILLOGICAL_IMPULSE_VIRTUAL_ENV.*|#!/usr/bin/env python3|'
 
-        # Suppress permission errors when writing to /dev/pts in applycolor.sh
-        sed -i 's|/dev/pts/\*|/dev/pts/* 2>/dev/null|' $out/ii/scripts/colors/applycolor.sh
-
         patchShebangs $out
       '';
 in
@@ -140,11 +137,13 @@ in
         "matugen" \
         "kde-material-you-colors"
       do
-      if [ -L "$targetPath/$item" ]; then
-        $DRY_RUN_CMD rm -rf "$targetPath/$item"
-      fi
-      $DRY_RUN_CMD cp -rf "$configPath/$item" "$targetPath/$item"
-      $DRY_RUN_CMD chmod -R u+w "$targetPath/$item"
+        if [ -L "$targetPath/$item" ]; then
+          $DRY_RUN_CMD rm -rf "$targetPath/$item"
+        fi
+        $DRY_RUN_CMD cp -rf "$configPath/$item" "$targetPath/$item"
+        $DRY_RUN_CMD chmod -R u+rw "$targetPath/$item"
+        $DRY_RUN_CMD find $configPath/$item -name "*.py" -exec chmod +x {} \;
+        $DRY_RUN_CMD find $configPath/$item -name "*.sh" -exec chmod +x {} \;
       done
 
       # quickshell separately (patched derivation)
